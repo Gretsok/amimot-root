@@ -1,0 +1,27 @@
+{
+  "room": {
+    "maxPlayers": 10,
+    "inviteCodeLength": 6
+  },
+  "game": {
+    "defaultTimerSeconds": 60
+  },
+  "delays": {
+    "lobbyHostDisconnectGraceMs": 5000,
+    "lobbyNonHostDisconnectGraceMs": 5000,
+    "inGameHostDisconnectGraceMs": 10000,
+    "inGameNonHostMarkForRemovalGraceMs": 0
+  },
+  "cleanup": {
+    "orphanRoomTtlMs": 10800000,
+    "cleanupSweepIntervalMs": 300000
+  },
+  "player": {
+    "displayNameMaxLength": 15
+  },
+  "rgpd": {
+    "inactiveAccountNotifyAfterDays": 730,
+    "inactiveAccountDeleteAfterDays": 760,
+    "anonymousLogRetentionDays": 30
+  }
+}

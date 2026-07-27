@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #1F1435; }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+    @keyframes bounceIdle {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-6px) scale(1.02); }
+    }
+    @keyframes floatBlob {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(4deg); }
+    }
+    a { color: #2A1B4D; }
+    a:hover { color: #FF4D8D; }
+  </style>
+</helmet>
+
+<div style="font-family:'Poppins',sans-serif; display:flex; flex-direction:column; align-items:center; gap:64px; padding:64px 24px 100px;">
+
+  <!-- ================= HEADER ================= -->
+  <div style="text-align:center; max-width:900px;">
+    <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; letter-spacing:2px; color:#FF8C42; text-transform:uppercase;">Charte graphique</div>
+    <div style="font-family:'Fredoka',sans-serif; font-size:56px; font-weight:700; color:#FFFFFF; margin-top:6px;">AMIMOT</div>
+    <div style="font-size:16px; color:#C9BEE0; margin-top:8px;">Cartoon flat / bouncy — contours épais, ombres franches, couleurs saturées.</div>
+  </div>
+
+  <!-- ================= SECTION 1: CHARTE ================= -->
+  <div style="width:100%; max-width:1280px; background:#FFF6E9; border:5px solid #2A1B4D; border-radius:40px; box-shadow:12px 12px 0 #150C26; padding:56px; display:flex; flex-direction:column; gap:48px;">
+
+    <div style="display:flex; align-items:center; gap:16px;">
+      <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">01 — Palette</div>
+    </div>
+
+    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+      <div style="display:flex; flex-direction:column; gap:10px; width:180px;">
+        <div style="height:110px; background:#FF4D8D; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D;"></div>
+        <div style="font-weight:600; color:#2A1B4D; font-size:15px;">Rose fuchsia</div>
+        <div style="font-size:13px; color:#7A6E93;">#FF4D8D</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; width:180px;">
+        <div style="height:110px; background:#FF8C42; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D;"></div>
+        <div style="font-weight:600; color:#2A1B4D; font-size:15px;">Orange corail</div>
+        <div style="font-size:13px; color:#7A6E93;">#FF8C42</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; width:180px;">
+        <div style="height:110px; background:#2A1B4D; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #150C26;"></div>
+        <div style="font-weight:600; color:#2A1B4D; font-size:15px;">Violet nuit</div>
+        <div style="font-size:13px; color:#7A6E93;">#2A1B4D — contours / texte</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; width:180px;">
+        <div style="height:110px; background:#3EEBA8; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D;"></div>
+        <div style="font-weight:600; color:#2A1B4D; font-size:15px;">Menthe</div>
+        <div style="font-size:13px; color:#7A6E93;">#3EEBA8 — CTA principal</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; width:180px;">
+        <div style="height:110px; background:#FFF6E9; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D;"></div>
+        <div style="font-weight:600; color:#2A1B4D; font-size:15px;">Crème</div>
+        <div style="font-size:13px; color:#7A6E93;">#FFF6E9 — fonds clairs</div>
+      </div>
+    </div>
+
+    <div style="height:2px; background:#EADFC7;"></div>
+
+    <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">02 — Typographie</div>
+    <div style="display:flex; gap:40px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:280px;">
+        <div style="font-size:13px; color:#7A6E93; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Display — Fredoka (titres, boutons)</div>
+        <div style="font-family:'Fredoka',sans-serif; font-size:48px; font-weight:700; color:#2A1B4D; margin-top:8px;">C'est parti !</div>
+      </div>
+      <div style="flex:1; min-width:280px;">
+        <div style="font-size:13px; color:#7A6E93; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Texte — Poppins (règles, UI)</div>
+        <div style="font-family:'Poppins',sans-serif; font-size:20px; font-weight:500; color:#2A1B4D; margin-top:8px;">Devine le mot avant la fin du chrono. Le plus rapide gagne la manche.</div>
+      </div>
+    </div>
+
+    <div style="height:2px; background:#EADFC7;"></div>
+
+    <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">03 — Boutons</div>
+    <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+      <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2A1B4D; background:#3EEBA8; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D; padding:16px 32px;">Idle</div>
+      <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2A1B4D; background:#3EEBA8; border:4px solid #2A1B4D; border-radius:20px; box-shadow:3px 3px 0 #2A1B4D; padding:16px 32px; transform:translate(3px,3px);">Pressé</div>
+      <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#FFF6E9; background:#FF4D8D; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D; padding:16px 32px;">Secondaire</div>
+      <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2A1B4D; background:transparent; border:4px solid #2A1B4D; border-radius:20px; padding:16px 32px;">Fantôme</div>
+    </div>
+
+    <div style="height:2px; background:#EADFC7;"></div>
+
+    <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">04 — Chip joueur</div>
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:10px 22px 10px 10px;">
+        <div style="width:44px; height:44px; border-radius:50%; background:#FF8C42; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D;">L</div>
+        <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:17px;">Léa</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SECTION 2: ACCUEIL ================= -->
+  <div style="width:100%; max-width:1280px; display:flex; flex-direction:column; gap:16px;">
+    <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#FF8C42; letter-spacing:1px; text-transform:uppercase;">Écran — Accueil</div>
+    <div style="position:relative; overflow:hidden; background:#FF8C42; border:5px solid #2A1B4D; border-radius:40px; box-shadow:12px 12px 0 #150C26; min-height:760px; display:flex; align-items:center; justify-content:center; padding:40px;">
+
+      <div style="position:absolute; top:-60px; left:-60px; width:220px; height:220px; border-radius:50%; background:#FF4D8D; border:5px solid #2A1B4D; animation:floatBlob 6s ease-in-out infinite;"></div>
+      <div style="position:absolute; bottom:-70px; right:-40px; width:260px; height:260px; border-radius:50%; background:#3EEBA8; border:5px solid #2A1B4D; animation:floatBlob 7s ease-in-out infinite reverse;"></div>
+
+      <div style="position:relative; z-index:1; background:#FFF6E9; border:5px solid #2A1B4D; border-radius:36px; box-shadow:10px 10px 0 #2A1B4D; padding:56px 64px; display:flex; flex-direction:column; align-items:center; gap:28px; width:520px;">
+        <div style="font-family:'Fredoka',sans-serif; font-size:64px; font-weight:700; color:#2A1B4D; animation:bounceIdle 2.4s ease-in-out infinite;">AMIMOT</div>
+        <div style="font-size:17px; color:#5C4E78; text-align:center; margin-top:-16px;">Le jeu de mimes et de mots qui se joue à toute vitesse, entre amis.</div>
+
+        <div style="width:100%; display:flex; flex-direction:column; gap:14px; margin-top:12px;">
+          <div style="font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600; color:#2A1B4D; background:#3EEBA8; border:4px solid #2A1B4D; border-radius:20px; box-shadow:6px 6px 0 #2A1B4D; padding:18px; text-align:center;">Créer une partie</div>
+
+          <div style="display:flex; align-items:center; gap:2px; height:2px; background:#EADFC7; margin:6px 0;"></div>
+
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1; font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#B9AFCB; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:18px; padding:14px 18px;">CODE</div>
+            <div style="font-family:'Fredoka',sans-serif; font-size:20px; font-weight:600; color:#2A1B4D; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:18px; box-shadow:5px 5px 0 #2A1B4D; padding:14px 24px;">Rejoindre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SECTION 3: LOBBY ================= -->
+  <div style="width:100%; max-width:1280px; display:flex; flex-direction:column; gap:16px;">
+    <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#FF8C42; letter-spacing:1px; text-transform:uppercase;">Écran — Lobby</div>
+    <div style="position:relative; overflow:hidden; background:#FF4D8D; border:5px solid #2A1B4D; border-radius:40px; box-shadow:12px 12px 0 #150C26; min-height:820px; padding:48px; display:flex; flex-direction:column; gap:36px;">
+
+      <div style="position:absolute; top:-50px; right:60px; width:160px; height:160px; border-radius:50%; background:#FF8C42; border:5px solid #2A1B4D; opacity:0.9; animation:floatBlob 8s ease-in-out infinite;"></div>
+
+      <!-- top row: title + room code blob -->
+      <div style="position:relative; z-index:1; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:24px;">
+        <div style="font-family:'Fredoka',sans-serif; font-size:40px; font-weight:700; color:#FFF6E9;">Salle d'attente</div>
+
+        <div style="position:relative; width:220px; height:150px; display:flex; align-items:center; justify-content:center;">
+          <div style="position:absolute; inset:0; background:#3EEBA8; border:5px solid #2A1B4D; border-radius:60% 40% 55% 45% / 45% 55% 40% 60%; box-shadow:8px 8px 0 #2A1B4D;"></div>
+          <div style="position:relative; text-align:center;">
+            <div style="font-size:12px; font-weight:600; color:#1F5E44; text-transform:uppercase; letter-spacing:1px;">Code</div>
+            <div style="font-family:'Fredoka',sans-serif; font-size:34px; font-weight:700; color:#2A1B4D; letter-spacing:3px;">V7K2Q</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- players -->
+      <div style="position:relative; z-index:1; background:#FFF6E9; border:5px solid #2A1B4D; border-radius:32px; box-shadow:8px 8px 0 #2A1B4D; padding:32px; display:flex; flex-direction:column; gap:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-family:'Fredoka',sans-serif; font-size:22px; font-weight:700; color:#2A1B4D;">Joueurs</div>
+          <div style="font-family:'Fredoka',sans-serif; font-size:18px; font-weight:600; color:#7A6E93;">7 / 8</div>
+        </div>
+
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.2s ease-in-out infinite; animation-delay:0s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#FF8C42; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D; font-size:18px;">L</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Léa <span style="font-size:12px; color:#FF8C42; font-weight:700;">HÔTE</span></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.6s ease-in-out infinite; animation-delay:0.3s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#3EEBA8; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D; font-size:18px;">M</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Marc</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 2.9s ease-in-out infinite; animation-delay:0.6s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#FF4D8D; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#FFF6E9; font-size:18px;">S</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Sofia</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.4s ease-in-out infinite; animation-delay:0.9s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#FFC94D; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D; font-size:18px;">T</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Théo</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.1s ease-in-out infinite; animation-delay:1.2s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#8C6FE8; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#FFF6E9; font-size:18px;">N</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Nino</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.8s ease-in-out infinite; animation-delay:1.5s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#FF8C42; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D; font-size:18px;">C</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Chloé</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:#FFFFFF; border:4px solid #2A1B4D; border-radius:60px; box-shadow:5px 5px 0 #2A1B4D; padding:8px 20px 8px 8px; animation:wiggle 3.3s ease-in-out infinite; animation-delay:1.8s;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#3EEBA8; border:3px solid #2A1B4D; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; color:#2A1B4D; font-size:18px;">R</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#2A1B4D; font-size:16px;">Rayan</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; border:4px dashed #C9BEE0; border-radius:60px; padding:8px 20px 8px 8px; opacity:0.6;">
+            <div style="width:46px; height:46px; border-radius:50%; background:#FFF6E9; border:3px dashed #C9BEE0; display:flex; align-items:center; justify-content:center; color:#C9BEE0; font-size:22px;">+</div>
+            <div style="font-family:'Fredoka',sans-serif; font-weight:600; color:#C9BEE0; font-size:16px;">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- settings row (no bento) -->
+      <div style="position:relative; z-index:1; display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:180px; background:#FFF6E9; border:4px solid #2A1B4D; border-radius:24px; box-shadow:6px 6px 0 #2A1B4D; padding:20px 24px;">
+          <div style="font-size:13px; font-weight:600; color:#7A6E93; text-transform:uppercase; letter-spacing:1px;">Manches</div>
+          <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">5</div>
+        </div>
+        <div style="flex:1; min-width:180px; background:#FFF6E9; border:4px solid #2A1B4D; border-radius:24px; box-shadow:6px 6px 0 #2A1B4D; padding:20px 24px;">
+          <div style="font-size:13px; font-weight:600; color:#7A6E93; text-transform:uppercase; letter-spacing:1px;">Chrono</div>
+          <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">60 sec</div>
+        </div>
+        <div style="flex:1; min-width:180px; background:#FFF6E9; border:4px solid #2A1B4D; border-radius:24px; box-shadow:6px 6px 0 #2A1B4D; padding:20px 24px;">
+          <div style="font-size:13px; font-weight:600; color:#7A6E93; text-transform:uppercase; letter-spacing:1px;">Catégorie</div>
+          <div style="font-family:'Fredoka',sans-serif; font-size:28px; font-weight:700; color:#2A1B4D;">Tout mélangé</div>
+        </div>
+      </div>
+
+      <!-- start button -->
+      <div style="position:relative; z-index:1; display:flex; justify-content:center; margin-top:8px;">
+        <div
+          style="font-family:'Fredoka',sans-serif; font-size:30px; font-weight:700; color:#1F5E44; background:#3EEBA8; border:5px solid #2A1B4D; border-radius:28px; box-shadow:8px 8px 0 #2A1B4D; padding:22px 72px; cursor:pointer; animation:bounceIdle 2.6s ease-in-out infinite; transition:transform 0.08s ease;"
+          style-active="transform:translate(6px,6px); box-shadow:2px 2px 0 #2A1B4D; animation:none;"
+        >C'est parti !</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Surcouche de dev : hot-reload via bind mounts, mais mêmes noms DNS ("backend", "postgres")
+# et même règle d'exposition (seul le frontend publie un port) qu'en prod.
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./config/game-defaults.json:/app/config/game-defaults.json:ro
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # !override remplace entièrement la liste "ports" du fichier de base
+    # (sinon Compose fusionne les deux, ce qui republierait aussi le port 80
+    # de prod en plus du 5173 de dev, sur le même port hôte).
+    ports: !override
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      NODE_ENV: development

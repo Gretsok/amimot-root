@@ -1,0 +1,70 @@
+networks:
+  amimot-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  caddy_data: # certificats Let's Encrypt / auto-signés, persistés entre redémarrages
+  caddy_config:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - amimot-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Aucun port publié : accessible uniquement via le réseau Docker interne.
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      CONFIG_PATH: /app/config/game-defaults.json
+      PORT: 3000
+    volumes:
+      - ./config/game-defaults.json:/app/config/game-defaults.json:ro
+    networks:
+      - amimot-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Aucun port publié : seul le conteneur frontend l'atteint, via le DNS Docker "backend".
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      # DOMAIN + TLS_MODE substitués dans le Caddyfile :
+      #   - dev/local (valeurs par défaut) : localhost + certificat auto-signé.
+      #   - prod (VPS) : nom de domaine réel + email → Let's Encrypt automatique.
+      DOMAIN: ${DOMAIN:-localhost}
+      TLS_MODE: ${TLS_MODE:-internal}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - amimot-net
+    depends_on:
+      - backend
+    # Seul service exposé publiquement : sert le build statique, termine le TLS,
+    # et relaie /api et /socket.io vers "backend".
