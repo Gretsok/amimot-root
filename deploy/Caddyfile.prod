@@ -7,6 +7,10 @@
 		reverse_proxy backend:3000
 	}
 	handle {
+		# HSTS uniquement ici : /api/* et /socket.io/* l'ont déjà via helmet()
+		# côté backend (reverse_proxy la relaie telle quelle) ; la dupliquer
+		# ici produirait un header Strict-Transport-Security en double.
+		header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		root * /srv
 		try_files {path} /index.html
 		file_server
