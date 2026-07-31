@@ -10,22 +10,16 @@
       "S": 1, "T": 1, "U": 1, "V": 1, "W": 1, "X": 1, "Y": 1, "Z": 1
     },
     "phaseDurationsSeconds": {
-      "preparation": 15,
-      "propositionMax": 45,
-      "propositionEarlyEndGraceSeconds": 3,
+      "preparation": 4,
+      "propositionMax": 8,
+      "propositionEarlyEndGraceSeconds": 1,
       "resolutionHostDisconnectFallbackSeconds": 5,
-      "resolutionAutoRevealIntervalSeconds": 4,
-      "recap": 6,
-      "shop": 20
+      "resolutionAutoRevealIntervalSeconds": 1,
+      "recap": 2,
+      "shop": 2
     },
     "rounds": [
-      { "scoreMultiplier": 1, "coinMultiplier": 1, "cardPriceMultiplier": 1 },
-      { "scoreMultiplier": 1, "coinMultiplier": 1, "cardPriceMultiplier": 1 },
-      { "scoreMultiplier": 1, "coinMultiplier": 1, "cardPriceMultiplier": 1 },
-      { "scoreMultiplier": 1.5, "coinMultiplier": 1, "cardPriceMultiplier": 1 },
-      { "scoreMultiplier": 1.5, "coinMultiplier": 1.5, "cardPriceMultiplier": 1 },
-      { "scoreMultiplier": 2, "coinMultiplier": 1.5, "cardPriceMultiplier": 1.5 },
-      { "scoreMultiplier": 3, "coinMultiplier": 2, "cardPriceMultiplier": 2 }
+      { "scoreMultiplier": 1, "coinMultiplier": 1, "cardPriceMultiplier": 1 }
     ],
     "hand": {
       "maxSize": 10

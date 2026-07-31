@@ -1,0 +1,14 @@
+{
+  "name": "amimot-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "End-to-end test suite covering the whole Amimot application (frontend + backend + realtime, run together).",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
