@@ -88,7 +88,23 @@ defaults=$(curl -s -o /dev/null -w '%{http_code}' "$LOCAL_URL/api/config/game-de
 check "l'API répond à travers le proxy ($LOCAL_URL/api)" "$([ "$defaults" = "200" ] && echo 0 || echo 1)" "HTTP $defaults"
 
 # --------------------------------------------------------------------------
-section "3. Site public"
+section "3. Service des pages"
+
+# Repli SPA : sans lui, un lien direct vers une page légale renvoie 404 — or
+# l'art. 12 du RGPD demande une information « aisément accessible ». Ce
+# contrôle passe par Caddy en local, donc il vaut MÊME SANS domaine : c'est le
+# point le plus fragile de la configuration, il ne doit jamais être sauté.
+ROUTES="confidentialite mentions-legales compte mot-de-passe-oublie reinitialiser"
+
+code=$(curl -s -o /dev/null -w '%{http_code}' "$LOCAL_URL/")
+check "l'accueil est servi" "$([ "$code" = "200" ] && echo 0 || echo 1)" "HTTP $code"
+
+for route in $ROUTES; do
+  code=$(curl -s -o /dev/null -w '%{http_code}' "$LOCAL_URL/$route")
+  check "/$route servi par le repli SPA" "$([ "$code" = "200" ] && echo 0 || echo 1)" "HTTP $code"
+done
+
+section "3 bis. Exposition publique"
 
 if [ -n "$DOMAIN" ]; then
   code=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/")
@@ -100,12 +116,10 @@ if [ -n "$DOMAIN" ]; then
     *) fail "en-tête HSTS absent" "attendu sur les réponses statiques (Caddyfile.prod)" ;;
   esac
 
-  # Repli SPA : sans lui, un lien direct vers une page légale renvoie 404 —
-  # or l'art. 12 du RGPD demande une information « aisément accessible ».
-  for route in confidentialite mentions-legales compte mot-de-passe-oublie reinitialiser; do
-    code=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/$route")
-    check "/$route accessible par lien direct" "$([ "$code" = "200" ] && echo 0 || echo 1)" "HTTP $code"
-  done
+  # Une route cliente en HTTPS : confirme que le proxy de l'hôte relaie bien le
+  # repli vérifié plus haut, et ne se contente pas de servir la racine.
+  code=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/confidentialite")
+  check "/confidentialite joignable publiquement" "$([ "$code" = "200" ] && echo 0 || echo 1)" "HTTP $code"
 
   redirect=$(curl -s -o /dev/null -w '%{http_code}' "http://$DOMAIN/")
   case "$redirect" in
@@ -113,7 +127,7 @@ if [ -n "$DOMAIN" ]; then
     *)   warn "http://$DOMAIN répond $redirect — vérifier la redirection côté nginx" ;;
   esac
 else
-  warn "contrôles HTTPS ignorés (aucun domaine fourni)"
+  warn "contrôles HTTPS ignorés (aucun domaine fourni) — le repli SPA a tout de même été vérifié en local"
 fi
 
 # --------------------------------------------------------------------------
