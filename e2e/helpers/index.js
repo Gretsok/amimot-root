@@ -31,7 +31,12 @@ async function revealRoomCode(page) {
 
 // Inscrit un compte avec un email/pseudo uniques par appel (évite les 409
 // "pseudo déjà pris" entre exécutions/tests parallèles).
-async function registerAccount(page, { password = 'TestPassw0rd!' } = {}) {
+// Le serveur exige au moins 12 caractères ET l'acceptation explicite de la
+// politique de confidentialité : un mot de passe court ferait échouer tous les
+// tests d'authentification avec une erreur sans rapport avec leur objet.
+const E2E_PASSWORD = 'correct horse battery';
+
+async function registerAccount(page, { password = E2E_PASSWORD } = {}) {
   const unique = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `e2e-${unique}@example.com`;
   // Les 12 DERNIERS caractères (pas les premiers) : le pseudo est plafonné à
@@ -45,10 +50,17 @@ async function registerAccount(page, { password = 'TestPassw0rd!' } = {}) {
   await page.getByPlaceholder('Email').fill(email);
   await page.getByPlaceholder('Pseudo (15 caractères max)').fill(pseudo);
   await page.getByPlaceholder('Mot de passe').fill(password);
+  await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: "S'inscrire" }).click();
-  await page.getByText(`Mon profil (${pseudo})`).waitFor({ timeout: 8000 });
+  await page.getByText(`Mon compte (${pseudo})`).waitFor({ timeout: 8000 });
 
   return { email, pseudo, password };
+}
+
+// Le profil est devenu une vraie page (/compte) : plus une modale à ouvrir.
+async function goToAccount(page, pseudo) {
+  await page.getByRole('link', { name: `Mon compte (${pseudo})` }).click();
+  await page.getByRole('heading', { name: 'Mon compte' }).waitFor({ timeout: 8000 });
 }
 
 // AuthOverlay conserve son mode (connexion/inscription) entre deux ouvertures
@@ -75,6 +87,8 @@ module.exports = {
   joinRoom,
   revealRoomCode,
   registerAccount,
+  goToAccount,
   ensureLoginMode,
   ensureRegisterMode,
+  E2E_PASSWORD,
 };

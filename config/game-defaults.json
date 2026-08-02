@@ -67,8 +67,6 @@
     "displayNameMaxLength": 15
   },
   "rgpd": {
-    "inactiveAccountNotifyAfterDays": 730,
-    "inactiveAccountDeleteAfterDays": 760,
-    "anonymousLogRetentionDays": 30
+    "inactiveAccountDeleteAfterDays": 760
   }
 }

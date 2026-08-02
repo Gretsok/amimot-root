@@ -2,6 +2,16 @@ networks:
   amimot-net:
     driver: bridge
 
+# Rétention des journaux (RGPD, art. 5.1.e) : sans rotation, les journaux des
+# conteneurs — qui contiennent des adresses IP côté Caddy — croissent sans fin
+# et conservent ces données indéfiniment. 3 fichiers de 10 Mo par service
+# plafonnent la conservation à une fenêtre glissante récente.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 volumes:
   pgdata:
   caddy_data: # certificats Let's Encrypt / auto-signés, persistés entre redémarrages
@@ -9,6 +19,7 @@ volumes:
 
 services:
   postgres:
+    logging: *default-logging
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -26,6 +37,7 @@ services:
     # Aucun port publié : accessible uniquement via le réseau Docker interne.
 
   backend:
+    logging: *default-logging
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -52,6 +64,7 @@ services:
     # Aucun port publié : seul le conteneur frontend l'atteint, via le DNS Docker "backend".
 
   frontend:
+    logging: *default-logging
     build:
       context: ./frontend
       dockerfile: Dockerfile
