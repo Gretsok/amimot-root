@@ -35,12 +35,13 @@ test('reaches the final ranking after a single round and returns to the Lobby', 
   await guest.getByRole('button', { name: 'Valider' }).click();
 
   await expect(host.getByRole('heading', { name: 'Récap des contraintes' })).toBeVisible({ timeout: 10000 });
-  const nextBtn = host.getByRole('button', { name: 'Mot suivant' });
-  if (await nextBtn.count()) {
-    await nextBtn.click();
-  }
+  // Les deux joueurs ont dit le même mot : un seul mot à révéler, donc le
+  // premier bouton de progression est déjà celui qui clôt la phase.
+  await host.getByRole('button', { name: 'Défilement manuel' }).click();
+  await host.getByRole('button', { name: 'Voir les points' }).click();
 
   await expect(host.getByRole('heading', { name: 'Récap des points' })).toBeVisible({ timeout: 10000 });
+  await host.getByRole('button', { name: 'Passer à la boutique' }).click();
   await expect(host.getByRole('heading', { name: 'Boutique' })).toBeVisible({ timeout: 8000 });
 
   // Une seule manche configurée : Boutique expire directement vers ENDED.

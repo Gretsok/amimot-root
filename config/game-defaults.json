@@ -15,7 +15,6 @@
       "propositionEarlyEndGraceSeconds": 3,
       "resolutionHostDisconnectFallbackSeconds": 5,
       "resolutionAutoRevealIntervalSeconds": 4,
-      "recap": 6,
       "shop": 20
     },
     "rounds": [

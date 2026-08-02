@@ -34,7 +34,11 @@ async function revealRoomCode(page) {
 async function registerAccount(page, { password = 'TestPassw0rd!' } = {}) {
   const unique = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `e2e-${unique}@example.com`;
-  const pseudo = `E2E${unique}`.slice(0, 15);
+  // Les 12 DERNIERS caractères (pas les premiers) : le pseudo est plafonné à
+  // 15 caractères, et tronquer par la gauche coupait justement le suffixe
+  // aléatoire — deux tests parallèles inscrits dans la même dizaine de ms
+  // repartaient alors avec le même pseudo et un 409 "déjà pris".
+  const pseudo = `E2E${unique.slice(-12)}`;
 
   await page.getByRole('button', { name: 'Se connecter / créer un compte' }).click();
   await page.getByText('Pas encore de compte ? Inscris-toi').click();
