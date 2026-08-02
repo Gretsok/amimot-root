@@ -17,8 +17,8 @@ Relevé public de la zone `fergalmechin.fr` :
 | Serveurs de noms | `ns200.anycast.me`, `dns200.anycast.me` | ✅ Zone hébergée chez OVH — tout se pilote depuis le panel |
 | MX | `mx1.mail.ovh.net` (1), `mx2` (5), `mx3` (100) | ✅ Service email OVH **déjà actif** sur le domaine |
 | SPF | `v=spf1 include:mx.ovh.com -all` | ✅ **Déjà correct** — ne pas y toucher |
-| DKIM | Aucun sur les sélecteurs usuels (`ovh`, `mail`, `default`, `selector1`…) | ❓ Probablement absent — à confirmer dans le panel, OVH peut utiliser un sélecteur généré |
-| DMARC (`_dmarc`) | Aucun | ❌ À créer |
+| DKIM | Introuvable sur les sélecteurs usuels (`ovh`, `mail`, `default`, `selector1`…) | ✅ **Actif** — confirmé le 2 août par mail-tester (« parfaitement authentifié »). Le sondage DNS n'avait rien donné parce qu'OVH utilise un sélecteur généré, non devinable : on ne peut pas énumérer les sélecteurs, il faut les connaître |
+| DMARC (`_dmarc`) | Aucun | ✅ **Publié le 2 août**, vérifié : `v=DMARC1; p=none; rua=mailto:amimot-assistance@fergalmechin.fr; fo=1; adkim=r; aspf=r` |
 | A `fergalmechin.fr` | `51.91.236.193` | — |
 | A `amimot.fergalmechin.fr` | `46.105.28.219` | — (le VPS du jeu) |
 
@@ -142,28 +142,91 @@ nslookup -type=TXT _dmarc.fergalmechin.fr 8.8.8.8
 ## Étape 5 — Tester l'envoi SMTP depuis le serveur
 
 Avant de brancher l'application, confirmer que le VPS peut réellement émettre. Certains
-hébergeurs bloquent le port 25 sortant ; **le port 587 doit rester ouvert** (c'est celui qu'on
-utilisera).
+hébergeurs filtrent le trafic SMTP sortant ; **le port 587 doit être ouvert** (c'est celui
+qu'on utilisera).
 
-Depuis le VPS :
+### Le test qui suffit
+
+Une seule inconnue mérite d'être levée avant d'écrire du code : le port est-il ouvert ? Le
+reste (identifiants, format du message) se corrige en deux minutes le jour venu. Une ligne
+sur le VPS, aucun outil à installer, rien à éditer :
 
 ```bash
-docker run --rm -it node:22-alpine sh -c '
-npm i -s nodemailer >/dev/null 2>&1
-node -e "
-const n=require(\"nodemailer\");
-n.createTransport({
-  host:\"ssl0.ovh.net\", port:587, secure:false,
-  auth:{user:\"amimot-assistance@fergalmechin.fr\", pass:process.env.P}
-}).sendMail({
-  from:\"Amimot <amimot-assistance@fergalmechin.fr>\",
-  to:process.env.T, subject:\"Test SMTP Amimot\", text:\"Ça marche.\"
-}).then(r=>console.log(\"OK\", r.messageId)).catch(e=>console.error(\"ÉCHEC\", e.message));
-"' 
+timeout 5 bash -c '</dev/tcp/ssl0.ovh.net/587' && echo "587 OUVERT" || echo "587 BLOQUE"
 ```
 
-en fournissant `P` (mot de passe de la boîte) et `T` (adresse de destination). Un `OK` suivi
-d'un identifiant de message signifie que tout est en place.
+- `587 OUVERT` → feu vert, on peut brancher l'application.
+- `587 BLOQUE` → refaire l'essai avec `465`. Si les deux sont fermés : ticket OVH, ou
+  prestataire joignable en HTTPS plutôt qu'en SMTP.
+
+### Test d'envoi de bout en bout (facultatif)
+
+Plus complet, mais pas indispensable pour avancer. **Trois collages séparés**, jamais d'un
+seul bloc : la saisie du mot de passe avalerait les lignes suivantes.
+
+> À ne pas faire : une commande d'une seule ligne empilant `sh -c '…'`, `node -e "…"` et des
+> chaînes JS échappées. Trois niveaux de quoting cassent pour un guillemet de travers, et le
+> mot de passe atterrit dans l'historique du shell.
+
+**1. Écrire le script.** Rien ne s'affiche, c'est normal. Le `<<'EOF'` entre apostrophes
+empêche le shell de toucher au contenu :
+
+```bash
+cat > /tmp/smtp-test.js <<'EOF'
+const nodemailer = require('nodemailer');
+
+nodemailer
+  .createTransport({
+    host: 'ssl0.ovh.net',
+    port: 587,
+    secure: false, // STARTTLS : la connexion démarre en clair puis passe en TLS
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+  })
+  .sendMail({
+    from: `Amimot <${process.env.SMTP_USER}>`,
+    to: process.env.MAIL_TO,
+    subject: 'Test SMTP Amimot',
+    text: 'Ça marche.',
+  })
+  .then((info) => console.log('OK —', info.messageId))
+  .catch((err) => {
+    console.error('ÉCHEC —', err.message);
+    process.exit(1);
+  });
+EOF
+```
+
+**2. Saisir le mot de passe.** Cette ligne **seule**. `read -rs` ne l'affiche pas et ne le
+laisse pas dans l'historique :
+
+```bash
+read -rsp 'Mot de passe SMTP : ' SMTP_PASSWORD; echo
+```
+
+**3. Envoyer.** Docker ne sert qu'à disposer de Node le temps du test, sans rien installer
+sur le VPS :
+
+```bash
+docker run --rm \
+  -v /tmp/smtp-test.js:/app/test.js -w /app \
+  -e SMTP_USER='amimot-assistance@fergalmechin.fr' \
+  -e SMTP_PASSWORD="$SMTP_PASSWORD" \
+  -e MAIL_TO='ton-adresse@example.com' \
+  node:22-alpine sh -c 'npm i -s nodemailer >/dev/null 2>&1 && node test.js'
+unset SMTP_PASSWORD
+rm -f /tmp/smtp-test.js
+```
+
+Un `OK —` suivi d'un identifiant de message signifie que tout est en place.
+
+### Interpréter un échec
+
+| Message | Cause probable | Suite |
+|---|---|---|
+| `Invalid login` / `535` | Identifiant ou mot de passe erroné | L'identifiant est l'adresse **complète**. Vérifier dans le webmail |
+| `Connection timeout` / `ETIMEDOUT` | Port sortant filtré | Tester `nc -vz ssl0.ovh.net 587` ; si le 587 est bloqué, essayer le 465 avec `secure: true` |
+| `ECONNREFUSED` | Mauvais hôte ou mauvais port | Vérifier `ssl0.ovh.net` |
+| `Mailbox not found` | La boîte n'existe pas encore | Reprendre à l'étape 1 |
 
 ---
 
@@ -195,15 +258,33 @@ MAIL_FROM=Amimot <amimot-assistance@fergalmechin.fr>
 
 ## Récapitulatif
 
-- [ ] **Étape 1** — Boîte `amimot-assistance@` créée, réception vérifiée *(requis pour le RGPD,
-      indépendamment de l'envoi)*
-- [ ] **Étape 2** — DKIM activé, sélecteur noté, enregistrement visible dans le DNS
-- [ ] **Étape 3** — DMARC publié en `p=none`
-- [ ] **Étape 4** — mail-tester à 9/10 ou mieux
-- [ ] **Étape 5** — envoi SMTP réussi depuis le VPS sur le port 587
-- [ ] *(2 à 4 semaines plus tard)* — DMARC passé en `p=quarantine`, puis `p=reject`
+- [ ] **Étape 1** — Boîte `amimot-assistance@` créée, **réception** vérifiée *(requis pour le
+      RGPD, indépendamment de l'envoi — et le score mail-tester ne le prouve pas : il valide
+      le domaine, pas l'existence d'une boîte précise)*
+- [x] **Étape 2** — DKIM actif *(confirmé par mail-tester le 2 août)*
+- [x] **Étape 3** — DMARC publié en `p=none` *(vérifié dans le DNS public le 2 août)*
+- [x] **Étape 4** — mail-tester : **10/10**, « parfaitement authentifié », serveur non
+      blocklisté
+- [x] **Étape 5** — port 587 sortant **confirmé ouvert** depuis le VPS le 2 août
+- [ ] Renseigner `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` et
+      `APP_URL` dans le `.env` de production, puis redémarrer la stack. Tant qu'elles sont
+      vides, le service de mail reste **inerte** : il journalise au lieu d'envoyer, et la
+      réinitialisation de mot de passe ne part donc pas
+- [ ] *(2 à 4 semaines plus tard, soit vers le 30 août 2026)* — DMARC passé en
+      `p=quarantine`, puis `p=reject`
 
 Ne pas toucher au SPF : il est déjà correct.
+
+### Note sur les deux points orange de mail-tester
+
+Tous deux sont **sans objet pour du courrier transactionnel** et ne doivent pas être
+« corrigés » :
+
+- *Pas de version HTML* — le texte brut est parfaitement adapté à un mail de
+  réinitialisation, et se rend mieux partout.
+- *Pas d'en-tête `List-Unsubscribe`* — cet en-tête concerne les envois de masse. On ne se
+  désabonne pas d'une réinitialisation de mot de passe ; l'ajouter à du transactionnel serait
+  une erreur.
 
 ---
 

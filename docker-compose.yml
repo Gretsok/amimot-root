@@ -54,6 +54,15 @@ services:
       DOMAIN: ${DOMAIN:-localhost}
       HTTP_PORT: ${HTTP_PORT:-80}
       HTTPS_PORT: ${HTTPS_PORT:-443}
+      # Envoi transactionnel. Toutes optionnelles : sans SMTP_HOST, le service
+      # de mail reste inerte et journalise au lieu d'envoyer (cf.
+      # backend/src/services/mailer.service.js).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      APP_URL: ${APP_URL:-}
     volumes:
       - ./config/game-defaults.json:/app/config/game-defaults.json:ro
     networks:

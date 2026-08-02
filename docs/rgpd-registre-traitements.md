@@ -49,6 +49,7 @@ commit courant.
 | Dates de création, de mise à jour, de dernière connexion | Automatiques | Servent au calcul d'inactivité |
 | Version de jeton (`tokenVersion`) | Automatique | Technique : permet de révoquer les sessions |
 | Date d'acceptation de la politique (`policyAcceptedAt`) | Automatique à l'inscription | Preuve de l'information délivrée (art. 12-13) |
+| Jeton de réinitialisation de mot de passe | Créé à la demande | **Empreinte seule**, jamais le jeton ; expire en 60 min, usage unique, supprimé par la purge quotidienne dès qu'il est expiré ou consommé |
 
 **Aucune donnée sensible** au sens de l'article 9 n'est collectée. Aucune donnée de paiement.
 Aucun profilage ni décision automatisée au sens de l'article 22.
@@ -58,7 +59,7 @@ Aucun profilage ni décision automatisée au sens de l'article 22.
 | Destinataire | Rôle | Données concernées |
 |---|---|---|
 | Fergal Mechin (responsable) | Administration du service | Toutes |
-| OVH SAS — 2 rue Kellermann, 59100 Roubaix, France | Sous-traitant : hébergement | Toutes (au repos et en transit) |
+| OVH SAS — 2 rue Kellermann, 59100 Roubaix, France | Sous-traitant : hébergement **et messagerie sortante** (réinitialisation de mot de passe) | Toutes (au repos et en transit) ; adresse email pour les envois |
 | Google `[À COMPLÉTER : entité exacte]` — pour les utilisateurs de l'UE, il s'agit en principe de Google Ireland Ltd., à confirmer dans les conditions applicables | Fournisseur d'identité, **uniquement si** la personne choisit la connexion Google | Identifiant Google, email, nom d'affichage |
 
 ### Transferts hors UE

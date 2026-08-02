@@ -38,7 +38,7 @@ locale de développement pour vérifier le constat le plus grave (§C1).
 | 🟠 Important | [C6](#c6) Aucune politique de mot de passe | ✅ Corrigé |
 | 🟡 Moyen | [C7](#c7) `anonymousLogRetentionDays` est validé au démarrage mais n'est branché sur rien | ✅ Corrigé |
 | 🟡 Moyen | [C8](#c8) L'export de données omet des données réellement détenues | ✅ Corrigé |
-| 🟡 Moyen | [C9](#c9) Email jamais vérifié, et aucune procédure de récupération de compte | ⏸️ Reporté ([§G3](#g3)) |
+| 🟡 Moyen | [C9](#c9) Email jamais vérifié, et aucune procédure de récupération de compte | ◐ Récupération **faite** ; vérification d'email toujours reportée ([§G4](#g4)) |
 | 🟡 Moyen | [C10](#c10) Durée de session de 30 jours non révocable côté serveur | ✅ Corrigé |
 | 🟢 Mineur | [C11](#c11) `xp` / `gamesPlayed` collectés dans le schéma mais jamais alimentés | ✅ Corrigé |
 
@@ -436,8 +436,41 @@ Le service n'a aucune infrastructure d'envoi d'email, ce qui laisse trois points
   confidentialité. C'est ce qui rend la mesure loyale en l'absence de préavis.
 - **[C9](#c9) — vérification d'email.** Toujours absente : n'importe qui peut inscrire un
   compte avec l'adresse d'un tiers (art. 5.1.d, exactitude).
-- **[C9](#c9) — réinitialisation de mot de passe.** Toujours absente : un utilisateur qui
-  perd son mot de passe perd l'accès à ses données, donc la possibilité concrète d'exercer
-  ses droits d'accès et de portabilité. C'est le plus gênant des trois.
+- **[C9](#c9) — réinitialisation de mot de passe.** ✅ **Résolue depuis** — cf.
+  [§G4](#g4).
 
-Le jour où un envoi d'email existe, ces trois points se rouvrent ensemble.
+<a name="g4"></a>
+### G4. Envoi d'emails — mis en place le 2 août 2026 (soir)
+
+Le domaine `fergalmechin.fr` a été authentifié (SPF déjà en place, DKIM activé, DMARC publié
+en `p=none`), l'ensemble noté **10/10 par mail-tester** avec « parfaitement authentifié », et
+le port 587 sortant confirmé ouvert depuis le VPS. Marche à suivre :
+[ovh-email-setup.md](ovh-email-setup.md).
+
+**Aucun sous-traitant supplémentaire** : l'envoi passe par la messagerie OVH, déjà
+destinataire au [registre](rgpd-registre-traitements.md). Rien à ajouter à la politique de
+confidentialité de ce côté.
+
+**Ce que ça débloque, fait :** la **réinitialisation de mot de passe**. C'était le report le
+plus gênant — sans elle, perdre son mot de passe revenait à perdre l'accès à ses données,
+donc la possibilité concrète d'exercer ses droits d'accès et de portabilité.
+
+Choix de conception, tous vérifiés par des tests :
+
+- Le jeton n'est stocké que sous forme d'**empreinte SHA-256** : une base qui fuite ne permet
+  pas de prendre le contrôle des comptes.
+- **Usage unique**, expiration à 60 minutes, et toute demande ultérieure périme la
+  précédente — un lien intercepté cesse d'être utilisable dès qu'on en redemande un.
+- Le point d'entrée répond **exactement la même chose** pour une adresse connue, inconnue, ou
+  en cas de panne SMTP : sinon il devient un moyen de savoir qui a un compte. L'interface
+  respecte la même règle.
+- Changer le mot de passe **révoque toutes les sessions ouvertes** (via `tokenVersion`) : si
+  quelqu'un d'autre était connecté, le changement l'éjecte.
+- La politique de mot de passe s'applique aussi ici — sans quoi la réinitialisation serait
+  une porte dérobée pour la contourner.
+- Les jetons expirés ou consommés sont supprimés par la purge quotidienne : donnée sans
+  finalité, donc donnée à effacer.
+
+**Ce qui reste ouvert :** la vérification d'email, le préavis avant suppression pour
+inactivité ([C4](#c4)), et l'information individuelle des personnes en cas de violation
+(art. 34), qui ne dépend plus que d'être écrite.

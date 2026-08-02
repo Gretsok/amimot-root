@@ -44,6 +44,10 @@ module.exports = defineConfig({
         ROOM_CREATE_RATE_LIMIT_MAX: '500',
         ROOM_JOIN_RATE_LIMIT_MAX: '500',
         GAME_ACTION_RATE_LIMIT_MAX: '500',
+        // Même raison pour l'authentification REST (20/10min par défaut) : les
+        // specs de compte et de réinitialisation dépassent ce budget à elles
+        // seules, et plus encore en --repeat-each.
+        AUTH_RATE_LIMIT_MAX: '500',
       },
     },
     {

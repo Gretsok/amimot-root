@@ -17,10 +17,11 @@ test.describe('Modal accessibility', () => {
     await expect(page.getByRole('heading', { name: 'Connexion' })).toBeVisible();
 
     // Le focus initial est sur le panneau lui-même (tabIndex=-1), donc le
-    // 1er Tab atteint le 1er champ (email) ; avec 5 éléments focusables
-    // (email, mot de passe, "Se connecter", "Continuer avec Google", le lien
-    // de bascule), il faut 6 Tab pour boucler et revenir sur le premier.
-    for (let i = 0; i < 6; i += 1) {
+    // 1er Tab atteint le 1er champ (email) ; avec 6 éléments focusables
+    // (email, mot de passe, "Mot de passe oublié ?", "Se connecter",
+    // "Continuer avec Google", le lien de bascule), il faut 7 Tab pour boucler
+    // et revenir sur le premier.
+    for (let i = 0; i < 7; i += 1) {
       await page.keyboard.press('Tab');
     }
     const isBackOnEmail = await page.evaluate(
