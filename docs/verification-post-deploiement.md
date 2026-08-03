@@ -36,7 +36,7 @@ Il sort en code 0 si tout passe, sinon avec le nombre d'échecs.
 | 3 | Site public | HTTPS, en-tête HSTS, redirection depuis HTTP, et **repli SPA** sur les six routes clientes (sans lui, un lien direct vers la politique de confidentialité renvoie 404) |
 | 4 | Comptes | Inscription ; mot de passe trop court refusé ; inscription sans acceptation refusée ; profil ; export RGPD **sans empreinte de mot de passe** et **avec** sa note d'information |
 | 5 | Sessions | Un jeton **rejoué après déconnexion est refusé** — effacer le cookie ne suffisait pas historiquement |
-| 5 bis | Mot de passe | Changement refusé sans le mot de passe actuel ; politique appliquée ; après changement, **la session appelante survit et les autres sont révoquées** |
+| 5 bis | Mot de passe | Le changement exige une session ; **l'ancienne route de changement direct ne répond plus** ; la demande crée bien un jeton |
 | 5 ter | Confirmation | Le statut est exposé au client ; le renvoi exige une session ; un jeton forgé est refusé |
 | 6 | Email | SMTP réellement configuré ; demande de réinitialisation acceptée ; **réponse rigoureusement identique pour une adresse inconnue** ; aucune erreur d'envoi dans les journaux |
 | 7 | Journaux | Rotation active sur les trois conteneurs (ils contiennent des adresses IP) |
@@ -66,11 +66,15 @@ a maintenant deux messages à recevoir, et le premier arrive tout seul.
 4. Ouvre le lien → « Ton adresse est confirmée », et la pastille passe au vert.
 5. **Rouvre le même lien** : il doit être refusé (usage unique).
 
-**Réinitialisation de mot de passe**
+**Nouveau mot de passe — les deux entrées mènent au même message**
 
-6. Déconnecte-toi, puis « Mot de passe oublié ? » avec cette adresse.
+6. Depuis `/compte`, section « Mot de passe » : clique sur « M'envoyer le lien ».
+   **Si l'envoi échoue, l'écran te le dit** — c'est le seul parcours de mail qui remonte
+   ses erreurs, et donc le plus simple pour diagnostiquer un SMTP en panne.
 7. Ouvre le lien reçu → choisis un nouveau mot de passe → connecte-toi avec.
 8. **Rouvre le même lien** : il doit être refusé.
+9. Déconnecte-toi, puis « Mot de passe oublié ? » avec cette adresse : le message reçu doit
+   être **le même** qu'à l'étape 6, sa rédaction devant convenir aux deux cas.
 
 ### 2.2 Réception sur l'adresse de contact RGPD
 
@@ -100,9 +104,11 @@ Sur `https://amimot.fergalmechin.fr`, **sans être connecté** :
 Connecté, sur `/compte` : les quatre sections s'affichent, dont **Connexions** qui ne doit pas
 rester vide, et « Télécharger mes données » produit bien un fichier.
 
-Toujours sur `/compte`, la section **Mot de passe** : change-le avec le mot de passe actuel,
-vérifie que **tu restes connecté**, puis reconnecte-toi avec le nouveau. Un compte créé via
-Google ne doit pas voir cette section du tout.
+Toujours sur `/compte`, la section **Mot de passe** ne doit offrir qu'un bouton d'envoi et
+afficher l'adresse concernée — aucun champ de mot de passe, aucun lien « mot de passe
+oublié ». Un compte créé via Google ne doit pas voir cette section du tout.
+
+Enfin, **supprime un compte de test** et vérifie que le mail de confirmation arrive.
 
 ---
 
@@ -119,14 +125,57 @@ Google ne doit pas voir cette section du tout.
 | `le mailer est resté inerte` | Le `.env` a changé sans recréer le conteneur | `docker compose up -d --force-recreate backend` |
 | `réponse différente pour une adresse inconnue` | **Régression sérieuse** | Le point d'entrée révèle qui a un compte — à corriger avant d'ouvrir au public |
 | `jeton rejoué accepté` | **Régression sérieuse** | La déconnexion n'est plus opposable ; vérifier `tokenVersion` |
-| `les autres sessions sont révoquées` en échec | **Régression sérieuse** | Changer son mot de passe n'éjecte plus un intrus ; vérifier `changeAccountPassword` |
-| `la session appelante reste valable` en échec | Cookie non réémis par le contrôleur | Changer son mot de passe déconnecte — gênant sans être dangereux ; vérifier `res.cookie` dans `changePassword` |
+| `l'ancien changement direct n'existe plus` en échec | La route `/auth/change-password` répond encore | Le contournement du passage par mail subsiste — à retirer |
 | Mail de confirmation jamais reçu | Envoi best-effort : l'inscription réussit même si le SMTP échoue | `docker compose logs backend \| grep "confirmation d'adresse"` |
+| **Aucun mail de mot de passe reçu** | Trois causes possibles, toutes silencieuses jusqu'ici | Voir la section 3 bis ci-dessous |
 | `rotation des journaux` absente | Conteneurs créés avant l'ajout dans `docker-compose.yml` | `docker compose up -d --force-recreate` |
 
-Les deux lignes marquées « régression sérieuse » sont des défauts de confidentialité au sens
+Les lignes marquées « régression sérieuse » sont des défauts de confidentialité au sens
 de l'article 32 : ils ont déjà été corrigés une fois
 ([audit](rgpd-audit-2026-08.md)), leur retour justifie de ne pas déployer.
+
+---
+
+## 3 bis. Aucun mail de mot de passe ne parvient
+
+Ce parcours a été muet pendant tout un déploiement : le serveur répond 204 quoi qu'il arrive
+— délibérément, pour ne pas révéler qui a un compte — et l'écran annonçait « lien envoyé »
+même sur échec ([audit §G6](rgpd-audit-2026-08.md)). Il est désormais observable, mais la
+lecture reste indirecte. Dans l'ordre :
+
+**1. Le SMTP est-il seulement joignable ?** Le backend le dit au démarrage :
+
+```bash
+docker compose logs backend | grep '\[mailer\]'
+```
+
+`SMTP joignable` → passer au point 2. `INJOIGNABLE` ou `non configuré` → le problème est là,
+rien d'autre à chercher.
+
+**2. Est-ce le limiteur ?** Déclencher une demande et lire le code de retour :
+
+```bash
+curl -s -o /dev/null -w 'HTTP %{http_code}\n' -X POST https://amimot.fergalmechin.fr/api/auth/forgot-password -H 'Content-Type: application/json' -d '{"email":"ton.adresse@example.com"}'
+```
+
+`429` → limiteur saturé. Vérifier `TRUST_PROXY_HOPS` : s'il est trop bas pour la topologie
+réelle, `req.ip` vaut l'IP d'un proxy et le budget de 20 requêtes / 10 min est **partagé par
+tous les visiteurs** au lieu d'être par IP. Derrière le nginx de l'hôte **et** Caddy, il faut
+`TRUST_PROXY_HOPS=2`.
+
+**3. Le compte a-t-il bien été trouvé ?**
+
+```bash
+docker compose logs --tail 50 backend
+```
+
+`adresse sans compte local` → l'adresse est inconnue, ou le compte est un compte Google, qui
+n'a pas de mot de passe. `échec de la demande` → l'envoi a échoué, avec sa cause.
+
+**Raccourci :** la demande depuis `/compte` (« M'envoyer le lien ») emprunte exactement la
+même machinerie mais **remonte ses erreurs à l'écran**, puisque l'appelant est authentifié et
+qu'il n'y a alors aucun oracle à protéger. C'est le moyen le plus rapide de voir la cause
+réelle sans lire de journaux.
 
 ---
 

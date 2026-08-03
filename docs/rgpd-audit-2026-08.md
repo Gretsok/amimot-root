@@ -201,7 +201,7 @@ données d'un tiers (art. 32 : intégrité).
 **Correction :** `prisma.account.deleteMany({ where: { id: accountId, userId } })` et
 traiter `count === 0` comme un 404.
 
-### <a name="c4"></a>C4 — 🟠 La notification avant suppression n'est jamais envoyée
+### <a name="c4"></a>C4 — 🟠 La notification avant suppression n'est jamais envoyée ✅ résolu (§G6)
 
 **Où :** `backend/src/jobs/rgpd-purge.job.js:20-26`, `backend/src/server.js:31-36`
 
@@ -218,6 +218,10 @@ de la collecte ([C2](#c2)) **et** avant d'être exécutée.
 **Correction :** brancher un envoi d'email sur `listUsersToNotify()` dans la tâche
 planifiée, et mémoriser la date de notification (nouveau champ, ex. `inactivityNotifiedAt`)
 pour ne pas renvoyer le message à chaque passage quotidien.
+
+> ✅ **Fait le 3 août 2026**, exactement de cette façon — cf. [§G6](#g6). La clé de
+> configuration, retirée entre-temps faute d'envoi de mail possible, a été rétablie
+> maintenant qu'il y a du code derrière.
 
 ### <a name="c5"></a>C5 — 🟠 Le journal d'erreur peut contenir des données personnelles
 
@@ -470,9 +474,9 @@ Choix de conception, tous vérifiés par des tests :
 - Les jetons expirés ou consommés sont supprimés par la purge quotidienne : donnée sans
   finalité, donc donnée à effacer.
 
-**Ce qui reste ouvert :** le préavis avant suppression pour inactivité ([C4](#c4)), et
-l'information individuelle des personnes en cas de violation (art. 34), qui ne dépend plus
-que d'être écrite.
+**Ce qui reste ouvert :** le préavis avant suppression pour inactivité ([C4](#c4) — réglé
+depuis, cf. [§G6](#g6)), et l'information individuelle des personnes en cas de violation
+(art. 34), qui ne dépend plus que d'être écrite.
 
 <a name="g5"></a>
 ### G5. Confirmation d'adresse et changement de mot de passe — 3 août 2026
@@ -510,3 +514,74 @@ il sécurise son compte serait gratuit.
 confirmée peut cesser d'être relevée. Le préavis avant suppression pour inactivité
 ([C4](#c4)) reste à écrire ; il est désormais faisable, la seule pièce qui manquait étant
 l'envoi d'emails.
+
+<a name="g6"></a>
+### G6. Le mail de réinitialisation n'arrivait pas — 3 août 2026
+
+Signalé après déploiement : le message d'inscription arrivait, celui de réinitialisation
+jamais. Le SMTP fonctionnait donc, et le défaut était propre à ce chemin.
+
+**Le vrai problème n'était pas la panne, mais le silence.** Ce parcours était muet de bout
+en bout : le contrôleur répond 204 quoi qu'il arrive — délibérément, pour ne pas révéler qui
+a un compte — et l'écran affichait « lien envoyé » même sur échec. Un 429 ou une erreur
+d'envoi étaient donc rigoureusement invisibles, côté utilisateur comme côté journaux. Un
+test défendait même explicitement ce comportement.
+
+Corrections, indépendantes de la cause première :
+
+- **L'interface ne ment plus.** Un 429 et une panne d'envoi sont signalés. Ni l'un ni
+  l'autre ne dépend de l'existence du compte : les distinguer ne révèle rien. Seul le cas
+  « adresse inconnue » reste indiscernable, et il le reste.
+- **`trust proxy` était faux.** Il valait `1` avec le commentaire « Caddy est l'unique point
+  d'entrée », alors que le nginx de l'hôte termine le TLS **devant** Caddy — deux sauts.
+  Selon la configuration de ce nginx, `req.ip` pouvait se résoudre à une IP constante, et
+  les 20 requêtes / 10 min du limiteur d'authentification devenaient alors un **budget
+  global partagé par tous les visiteurs**. Rendu configurable (`TRUST_PROXY_HOPS`), à régler
+  à 2 en production.
+- **Le SMTP est vérifié au démarrage** et le résultat journalisé : rien ne distinguait
+  « configuré » de « configuré et joignable ».
+- **Le cas « aucun compte local » est journalisé** côté serveur, sans rien changer à la
+  réponse HTTP. Il était jusqu'ici impossible de le distinguer d'un envoi réussi.
+- **`.env.example` documente enfin les variables de mail**, qui n'y figuraient pas du tout.
+
+<a name="g7"></a>
+### G7. Le changement de mot de passe passe par le mail — 3 août 2026
+
+La section « Mot de passe » de l'espace compte se contredisait : elle proposait un changement
+direct (mot de passe actuel + nouveau) **et** un lien « mot de passe oublié » qui redemandait
+l'adresse affichée juste au-dessus.
+
+Le formulaire direct a été retiré. Le changement passe désormais par un lien envoyé à
+l'adresse du compte, comme l'oubli : **prouver qu'on relève l'adresse** vaut mieux que
+prouver qu'on connaît le mot de passe actuel, et c'est ce que vérifie ce détour. Un attaquant
+disposant d'une session ouverte ne peut plus verrouiller le compte de sa victime ; il lui
+faudrait la boîte mail — auquel cas il pouvait déjà passer par « mot de passe oublié ».
+
+`consumePasswordReset` devient le seul chemin qui écrit un mot de passe.
+
+**Un seul message et un seul écran** servent les deux cas, avec une rédaction neutre :
+« réinitialiser » présupposait un oubli et sonnait faux pour qui vient de cliquer sur
+« m'envoyer le lien » depuis son compte.
+
+Une différence assumée entre les deux points d'entrée : la version authentifiée **dit la
+vérité sur les échecs**. L'appelant est connecté, on sait déjà qu'il a un compte, il n'y a
+donc aucun oracle à protéger — et cela donne enfin un chemin où une panne d'envoi est
+visible sans compromettre la garantie du parcours anonyme.
+
+<a name="g8"></a>
+### G8. Mails de suppression — 3 août 2026
+
+- **Confirmation après suppression manuelle.** Les adresses sont relevées **avant** le
+  `delete` (après, il ne reste plus personne à qui écrire), et toutes celles du profil sont
+  servies pour qu'un compte lié à Google soit prévenu lui aussi. Envoi best-effort : le droit
+  à l'effacement prime sur la notification, une panne SMTP ne doit pas laisser en place un
+  compte qu'on a demandé à supprimer.
+- **Préavis à J-30 avant la purge pour inactivité** — cf. [C4](#c4). Nouveau champ
+  `User.inactivityNoticeSentAt`, sans lequel le job quotidien renverrait le même
+  avertissement chaque matin pendant un mois. Il est remis à null à la connexion : quelqu'un
+  qui revient puis repart deux ans plus tard doit être reprévenu. L'horodatage n'est posé
+  qu'**après** un envoi réussi — marquer d'abord ferait passer pour prévenu un compte qui ne
+  l'a jamais été, et il serait supprimé sans avertissement.
+
+Les trois textes affirmant qu'aucun rappel n'était envoyé (inscription, espace compte,
+politique de confidentialité) ont été repris en conséquence.

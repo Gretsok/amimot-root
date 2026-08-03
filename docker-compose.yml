@@ -63,6 +63,11 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
       APP_URL: ${APP_URL:-}
+      # Nombre de reverse proxies devant le backend. Se tromper est silencieux
+      # et rend le limiteur ci-dessous global au lieu d'être par IP (cf.
+      # .env.example et backend/src/app.js).
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-}
     volumes:
       - ./config/game-defaults.json:/app/config/game-defaults.json:ro
     networks:

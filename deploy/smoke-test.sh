@@ -190,33 +190,34 @@ res=$(api POST /api/auth/login "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"
 check "reconnexion" "$([ "$(status "$res")" = "200" ] && echo 0 || echo 1)" "HTTP $(status "$res")"
 
 # --------------------------------------------------------------------------
-section "5 bis. Changement de mot de passe"
+section "5 bis. Changement de mot de passe (par email uniquement)"
 
-NEW_PASSWORD="verification deploiement 43"
+# Le changement passe obligatoirement par le lien reçu par email : c'est ce qui
+# vérifie que la personne relève bien l'adresse de son compte. On ne déclenche
+# donc PAS d'envoi réel ici — l'adresse de test est en `.invalid` et l'échec
+# serait ininterprétable. On vérifie le garde-fou, et que le jeton est bien créé.
+anon=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$LOCAL_URL/api/auth/request-password-change")
+check "changement refusé sans session" "$([ "$anon" = "401" ] && echo 0 || echo 1)" "HTTP $anon (401 attendu)"
 
-# Sans le mot de passe actuel, un poste laissé ouvert suffirait à verrouiller
-# le compte de son propriétaire.
-res=$(api POST /api/auth/change-password "{\"currentPassword\":\"pas le bon\",\"newPassword\":\"$NEW_PASSWORD\"}")
-check "changement refusé sans le mot de passe actuel" "$([ "$(status "$res")" = "401" ] && echo 0 || echo 1)" "HTTP $(status "$res") (401 attendu)"
+# Le formulaire "mot de passe actuel + nouveau" a été retiré : sa route ne doit
+# plus répondre, sinon le contournement subsiste.
+gone=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$LOCAL_URL/api/auth/change-password" \
+  -H 'Content-Type: application/json' -b "$COOKIES" -d '{"currentPassword":"x","newPassword":"y"}')
+check "l'ancien changement direct n'existe plus" "$([ "$gone" = "404" ] && echo 0 || echo 1)" "HTTP $gone (404 attendu)"
 
-res=$(api POST /api/auth/change-password "{\"currentPassword\":\"$PASSWORD\",\"newPassword\":\"court\"}")
-check "politique de mot de passe appliquée au changement" "$([ "$(status "$res")" = "422" ] && echo 0 || echo 1)" "HTTP $(status "$res") (422 attendu)"
+res=$(api POST /api/auth/request-password-change)
+case "$(status "$res")" in
+  # 200 = message parti (ou mailer inerte sans SMTP). 5xx = envoi tenté et
+  # refusé, ce qui est attendu vers une adresse .invalid quand SMTP est réglé.
+  # Dans les deux cas le jeton a été créé, et c'est cela qu'on vérifie ensuite.
+  200|500|502) ok "demande de changement acceptée (HTTP $(status "$res"))" ;;
+  *) fail "demande de changement" "HTTP $(status "$res") — $(body "$res")" ;;
+esac
 
-# Le cookie de l'appelant est réémis : le déconnecter au moment où il sécurise
-# son compte serait gratuit.
-saved_cookie=$(mktemp); cp "$COOKIES" "$saved_cookie"
-res=$(api POST /api/auth/change-password "{\"currentPassword\":\"$PASSWORD\",\"newPassword\":\"$NEW_PASSWORD\"}")
-if [ "$(status "$res")" = "200" ]; then PASSWORD="$NEW_PASSWORD"; CLEANUP_PASSWORD="$NEW_PASSWORD"; fi
-check "changement de mot de passe" "$([ "$(status "$res")" = "200" ] && echo 0 || echo 1)" "HTTP $(status "$res")"
-
-still=$(curl -s -o /dev/null -w '%{http_code}' -b "$COOKIES" "$LOCAL_URL/api/account/me")
-check "la session appelante reste valable" "$([ "$still" = "200" ] && echo 0 || echo 1)" "HTTP $still (200 attendu)"
-
-# Changer son mot de passe parce qu'on se croit compromis ne sert à rien si
-# l'intrus reste connecté.
-other=$(curl -s -o /dev/null -w '%{http_code}' -b "$saved_cookie" "$LOCAL_URL/api/account/me")
-rm -f "$saved_cookie"
-check "les autres sessions sont révoquées" "$([ "$other" = "401" ] && echo 0 || echo 1)" "HTTP $other (401 attendu)"
+tokens=$(docker compose exec -T postgres psql -tAU "${POSTGRES_USER:-amimot}" -d "${POSTGRES_DB:-amimot}" \
+  -c 'select count(*) from "PasswordResetToken";' 2>/dev/null | tr -d '[:space:]')
+check "un jeton de changement a bien été créé" "$([ "${tokens:-0}" -ge 1 ] && echo 0 || echo 1)" \
+      "aucune ligne dans PasswordResetToken — le lien ne mènerait nulle part"
 
 # --------------------------------------------------------------------------
 section "5 ter. Confirmation d'adresse"
