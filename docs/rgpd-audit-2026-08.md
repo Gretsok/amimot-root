@@ -434,8 +434,7 @@ Le service n'a aucune infrastructure d'envoi d'email, ce qui laisse trois points
   une garantie inexistante. En contrepartie, la suppression après 760 jours est désormais
   annoncée **à l'inscription**, dans l'espace compte et dans la politique de
   confidentialité. C'est ce qui rend la mesure loyale en l'absence de préavis.
-- **[C9](#c9) — vérification d'email.** Toujours absente : n'importe qui peut inscrire un
-  compte avec l'adresse d'un tiers (art. 5.1.d, exactitude).
+- **[C9](#c9) — vérification d'email.** ✅ **Résolue depuis** — cf. [§G5](#g5).
 - **[C9](#c9) — réinitialisation de mot de passe.** ✅ **Résolue depuis** — cf.
   [§G4](#g4).
 
@@ -471,6 +470,43 @@ Choix de conception, tous vérifiés par des tests :
 - Les jetons expirés ou consommés sont supprimés par la purge quotidienne : donnée sans
   finalité, donc donnée à effacer.
 
-**Ce qui reste ouvert :** la vérification d'email, le préavis avant suppression pour
-inactivité ([C4](#c4)), et l'information individuelle des personnes en cas de violation
-(art. 34), qui ne dépend plus que d'être écrite.
+**Ce qui reste ouvert :** le préavis avant suppression pour inactivité ([C4](#c4)), et
+l'information individuelle des personnes en cas de violation (art. 34), qui ne dépend plus
+que d'être écrite.
+
+<a name="g5"></a>
+### G5. Confirmation d'adresse et changement de mot de passe — 3 août 2026
+
+Deux manques constatés à l'usage, tous deux dans le prolongement direct de [§G4](#g4).
+
+**Confirmation d'adresse ([C9](#c9), art. 5.1.d — exactitude).** Un email de confirmation
+part désormais à l'inscription d'un compte local. Mêmes garanties que pour la
+réinitialisation : empreinte SHA-256 seule en base, usage unique, toute demande ultérieure
+périmant la précédente, purge quotidienne des jetons expirés ou consommés. Trois choix
+méritent d'être justifiés plutôt que subis :
+
+- **Expiration à 7 jours**, et non 60 minutes. Ce lien n'ouvre aucun accès : il atteste
+  seulement que l'adresse est relevée. Une expiration courte enverrait dans le mur qui
+  relève ses messages au retour d'un week-end, sans rien protéger de plus.
+- **Le jeton se consomme en POST**, jamais en GET. Les liens contenus dans un message sont
+  suivis automatiquement par les antivirus et les aperçus de certains clients : un GET
+  serait consommé avant que la personne n'ait cliqué.
+- **Rien n'est bloqué faute de confirmation.** Le jeu reste accessible. La confirmation sert
+  à garantir que la réinitialisation de mot de passe aboutira quelque part — la présenter
+  comme un péage à l'entrée serait disproportionné pour un jeu de mots.
+
+Les comptes Google sont marqués confirmés d'emblée, y compris ceux créés avant cette
+migration : Google atteste déjà l'adresse.
+
+**Changement de mot de passe depuis l'espace compte.** Il n'existait aucun moyen de changer
+son mot de passe en étant connecté — seulement le parcours « mot de passe oublié », qui
+suppose de passer par sa boîte mail. Le mot de passe actuel est exigé : sans cela, un poste
+laissé ouvert suffirait à verrouiller le compte de son propriétaire. Le changement révoque
+toutes les autres sessions (`tokenVersion`) et périme un éventuel lien de réinitialisation en
+attente, mais **réémet le cookie de l'appelant** — déconnecter quelqu'un au moment précis où
+il sécurise son compte serait gratuit.
+
+**Ce que ça ne résout pas :** l'adresse n'est pas modifiable après coup, et une adresse
+confirmée peut cesser d'être relevée. Le préavis avant suppression pour inactivité
+([C4](#c4)) reste à écrire ; il est désormais faisable, la seule pièce qui manquait étant
+l'envoi d'emails.

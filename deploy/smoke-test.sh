@@ -94,7 +94,7 @@ section "3. Service des pages"
 # l'art. 12 du RGPD demande une information « aisément accessible ». Ce
 # contrôle passe par Caddy en local, donc il vaut MÊME SANS domaine : c'est le
 # point le plus fragile de la configuration, il ne doit jamais être sauté.
-ROUTES="confidentialite mentions-legales compte mot-de-passe-oublie reinitialiser"
+ROUTES="confidentialite mentions-legales compte mot-de-passe-oublie reinitialiser confirmer-email"
 
 code=$(curl -s -o /dev/null -w '%{http_code}' "$LOCAL_URL/")
 check "l'accueil est servi" "$([ "$code" = "200" ] && echo 0 || echo 1)" "HTTP $code"
@@ -188,6 +188,54 @@ check "un jeton rejoué après déconnexion est refusé" "$([ "$replay" = "401" 
 
 res=$(api POST /api/auth/login "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
 check "reconnexion" "$([ "$(status "$res")" = "200" ] && echo 0 || echo 1)" "HTTP $(status "$res")"
+
+# --------------------------------------------------------------------------
+section "5 bis. Changement de mot de passe"
+
+NEW_PASSWORD="verification deploiement 43"
+
+# Sans le mot de passe actuel, un poste laissé ouvert suffirait à verrouiller
+# le compte de son propriétaire.
+res=$(api POST /api/auth/change-password "{\"currentPassword\":\"pas le bon\",\"newPassword\":\"$NEW_PASSWORD\"}")
+check "changement refusé sans le mot de passe actuel" "$([ "$(status "$res")" = "401" ] && echo 0 || echo 1)" "HTTP $(status "$res") (401 attendu)"
+
+res=$(api POST /api/auth/change-password "{\"currentPassword\":\"$PASSWORD\",\"newPassword\":\"court\"}")
+check "politique de mot de passe appliquée au changement" "$([ "$(status "$res")" = "422" ] && echo 0 || echo 1)" "HTTP $(status "$res") (422 attendu)"
+
+# Le cookie de l'appelant est réémis : le déconnecter au moment où il sécurise
+# son compte serait gratuit.
+saved_cookie=$(mktemp); cp "$COOKIES" "$saved_cookie"
+res=$(api POST /api/auth/change-password "{\"currentPassword\":\"$PASSWORD\",\"newPassword\":\"$NEW_PASSWORD\"}")
+if [ "$(status "$res")" = "200" ]; then PASSWORD="$NEW_PASSWORD"; CLEANUP_PASSWORD="$NEW_PASSWORD"; fi
+check "changement de mot de passe" "$([ "$(status "$res")" = "200" ] && echo 0 || echo 1)" "HTTP $(status "$res")"
+
+still=$(curl -s -o /dev/null -w '%{http_code}' -b "$COOKIES" "$LOCAL_URL/api/account/me")
+check "la session appelante reste valable" "$([ "$still" = "200" ] && echo 0 || echo 1)" "HTTP $still (200 attendu)"
+
+# Changer son mot de passe parce qu'on se croit compromis ne sert à rien si
+# l'intrus reste connecté.
+other=$(curl -s -o /dev/null -w '%{http_code}' -b "$saved_cookie" "$LOCAL_URL/api/account/me")
+rm -f "$saved_cookie"
+check "les autres sessions sont révoquées" "$([ "$other" = "401" ] && echo 0 || echo 1)" "HTTP $other (401 attendu)"
+
+# --------------------------------------------------------------------------
+section "5 ter. Confirmation d'adresse"
+
+res=$(api GET /api/account/me)
+case "$(body "$res")" in
+  *emailVerifiedAt*) ok "le statut de confirmation est exposé au client" ;;
+  *) fail "le profil ne porte pas emailVerifiedAt" "l'espace compte ne pourra pas signaler une adresse non confirmée" ;;
+esac
+
+# On ne déclenche PAS de renvoi réel : l'adresse de test est en `.invalid`,
+# un envoi vers elle échouerait pour de bonnes raisons et rendrait ce contrôle
+# ininterprétable. On vérifie seulement que le point d'entrée est branché et
+# protégé — le renvoi lui-même est couvert par les tests d'intégration.
+anon=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$LOCAL_URL/api/auth/resend-verification")
+check "renvoi de confirmation refusé sans session" "$([ "$anon" = "401" ] && echo 0 || echo 1)" "HTTP $anon (401 attendu)"
+
+res=$(api POST /api/auth/verify-email '{"token":"jeton-invente"}')
+check "jeton de confirmation forgé refusé" "$([ "$(status "$res")" = "400" ] && echo 0 || echo 1)" "HTTP $(status "$res") (400 attendu)"
 
 # --------------------------------------------------------------------------
 section "6. Envoi d'email"

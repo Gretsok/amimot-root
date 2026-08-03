@@ -52,6 +52,12 @@ async function registerAccount(page, { password = E2E_PASSWORD } = {}) {
   await page.getByPlaceholder('Mot de passe').fill(password);
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: "S'inscrire" }).click();
+  // L'inscription annonce l'email de confirmation avant de rendre la main :
+  // la modale ne se ferme plus toute seule. `exact` est indispensable — sans
+  // lui le nom est cherché en sous-chaîne et "Continuer" désigne aussi le
+  // "Continuer avec Google" du formulaire encore affiché une fraction de
+  // seconde, ce qui envoie le navigateur chez Google.
+  await page.getByRole('button', { name: 'Continuer', exact: true }).click();
   await page.getByText(`Mon compte (${pseudo})`).waitFor({ timeout: 8000 });
 
   return { email, pseudo, password };

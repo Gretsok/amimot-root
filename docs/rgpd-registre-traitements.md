@@ -32,6 +32,7 @@ commit courant.
 | | |
 |---|---|
 | **Finalité principale** | Permettre la création d'un compte, l'authentification, la conservation d'un pseudo et d'une progression entre les parties |
+| **Finalité rattachée** | Envois transactionnels : confirmation d'adresse à l'inscription, réinitialisation de mot de passe à la demande. Aucun envoi promotionnel, aucune autre sollicitation |
 | **Finalités secondaires** | Suppression des comptes devenus inactifs (minimisation) |
 | **Base légale** | Exécution du contrat (art. 6.1.b) — le compte est le service demandé par la personne |
 | **Personnes concernées** | Joueurs ayant volontairement créé un compte. Réservé aux 15 ans et plus (déclaration à l'inscription) |
@@ -50,6 +51,8 @@ commit courant.
 | Version de jeton (`tokenVersion`) | Automatique | Technique : permet de révoquer les sessions |
 | Date d'acceptation de la politique (`policyAcceptedAt`) | Automatique à l'inscription | Preuve de l'information délivrée (art. 12-13) |
 | Jeton de réinitialisation de mot de passe | Créé à la demande | **Empreinte seule**, jamais le jeton ; expire en 60 min, usage unique, supprimé par la purge quotidienne dès qu'il est expiré ou consommé |
+| Date de confirmation de l'adresse (`emailVerifiedAt`) | Clic sur le lien reçu, ou d'emblée pour un compte Google | Preuve que l'adresse est relevée (art. 5.1.d, exactitude) |
+| Jeton de confirmation d'adresse | Créé à l'inscription, ou sur demande de renvoi | **Empreinte seule** ; expire en 7 jours, usage unique, même purge |
 
 **Aucune donnée sensible** au sens de l'article 9 n'est collectée. Aucune donnée de paiement.
 Aucun profilage ni décision automatisée au sens de l'article 22.
@@ -76,9 +79,10 @@ vérifier et archiver la référence exacte du mécanisme invoqué par Google.
   s'exécute une fois par jour (`backend/src/jobs/rgpd-purge.job.js`).
 - **Suppression demandée** : immédiate et définitive, en base, via l'espace compte. Les
   moyens de connexion liés sont supprimés en cascade.
-- **Aucun préavis n'est envoyé avant la suppression pour inactivité** (le service n'envoie
-  aucun email). Cette suppression est annoncée à l'inscription, dans l'espace compte et dans
-  la politique de confidentialité.
+- **Aucun préavis n'est envoyé avant la suppression pour inactivité.** Cette suppression est
+  annoncée à l'inscription, dans l'espace compte et dans la politique de confidentialité —
+  c'est ce qui la rend loyale à défaut de préavis. Un envoi d'emails existe désormais : un
+  préavis est faisable, il reste à écrire (cf. [audit](rgpd-audit-2026-08.md) §G5).
 - `[À COMPLÉTER]` — **Sauvegardes** : si des sauvegardes de la base existent, indiquer leur
   rétention et confirmer que la suppression s'y propage. Sans cela, le droit à l'effacement
   n'est pas effectif.

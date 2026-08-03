@@ -33,9 +33,11 @@ Il sort en code 0 si tout passe, sinon avec le nombre d'échecs.
 |---|---|---|
 | 1 | Conteneurs | Les trois services tournent ; le backend n'a **jamais redémarré** (un conteneur qui plante et repart paraît sain à l'instant T — c'est le compteur qui le trahit) |
 | 2 | Backend | `/healthz` répond ; **migrations Prisma à jour** ; l'API répond à travers le proxy |
-| 3 | Site public | HTTPS, en-tête HSTS, redirection depuis HTTP, et **repli SPA** sur les cinq routes clientes (sans lui, un lien direct vers la politique de confidentialité renvoie 404) |
+| 3 | Site public | HTTPS, en-tête HSTS, redirection depuis HTTP, et **repli SPA** sur les six routes clientes (sans lui, un lien direct vers la politique de confidentialité renvoie 404) |
 | 4 | Comptes | Inscription ; mot de passe trop court refusé ; inscription sans acceptation refusée ; profil ; export RGPD **sans empreinte de mot de passe** et **avec** sa note d'information |
 | 5 | Sessions | Un jeton **rejoué après déconnexion est refusé** — effacer le cookie ne suffisait pas historiquement |
+| 5 bis | Mot de passe | Changement refusé sans le mot de passe actuel ; politique appliquée ; après changement, **la session appelante survit et les autres sont révoquées** |
+| 5 ter | Confirmation | Le statut est exposé au client ; le renvoi exige une session ; un jeton forgé est refusé |
 | 6 | Email | SMTP réellement configuré ; demande de réinitialisation acceptée ; **réponse rigoureusement identique pour une adresse inconnue** ; aucune erreur d'envoi dans les journaux |
 | 7 | Journaux | Rotation active sur les trois conteneurs (ils contiennent des adresses IP) |
 | 8 | Effacement | Suppression du compte, et compte devenu inaccessible ensuite |
@@ -49,15 +51,26 @@ côté client. Comptez dix minutes.
 
 ### 2.1 Réception réelle d'un email — le seul contrôle bout en bout
 
-Le script vérifie que le serveur **accepte** la demande, pas que le message **arrive**.
+Le script vérifie que le serveur **accepte** la demande, pas que le message **arrive**. Il y
+a maintenant deux messages à recevoir, et le premier arrive tout seul.
 
-1. Crée un compte avec une adresse réelle que tu relèves.
-2. Déconnecte-toi, puis « Mot de passe oublié ? » avec cette adresse.
-3. **Le mail doit arriver en quelques secondes**, expéditeur `amimot-assistance@fergalmechin.fr`.
-   Regarde aussi dans les indésirables : s'il y atterrit, reprendre
-   [ovh-email-setup.md](ovh-email-setup.md).
-4. Ouvre le lien → choisis un nouveau mot de passe → connecte-toi avec.
+**Confirmation d'adresse**
+
+1. Crée un compte avec une adresse réelle que tu relèves. La modale doit annoncer
+   « Compte créé » et citer l'adresse.
+2. **Le mail doit arriver en quelques secondes**, expéditeur
+   `amimot-assistance@fergalmechin.fr`. Regarde aussi dans les indésirables : s'il y atterrit,
+   reprendre [ovh-email-setup.md](ovh-email-setup.md).
+3. Sur `/compte`, avant d'ouvrir le lien : la bannière « adresse non confirmée » et la pastille
+   rouge doivent être visibles.
+4. Ouvre le lien → « Ton adresse est confirmée », et la pastille passe au vert.
 5. **Rouvre le même lien** : il doit être refusé (usage unique).
+
+**Réinitialisation de mot de passe**
+
+6. Déconnecte-toi, puis « Mot de passe oublié ? » avec cette adresse.
+7. Ouvre le lien reçu → choisis un nouveau mot de passe → connecte-toi avec.
+8. **Rouvre le même lien** : il doit être refusé.
 
 ### 2.2 Réception sur l'adresse de contact RGPD
 
@@ -84,8 +97,12 @@ Sur `https://amimot.fergalmechin.fr`, **sans être connecté** :
 - `/mentions-legales` — éditeur et hébergeur visibles ;
 - les deux liens du pied de page mènent bien à ces pages.
 
-Connecté, sur `/compte` : les trois sections s'affichent, dont **Connexions** qui ne doit pas
+Connecté, sur `/compte` : les quatre sections s'affichent, dont **Connexions** qui ne doit pas
 rester vide, et « Télécharger mes données » produit bien un fichier.
+
+Toujours sur `/compte`, la section **Mot de passe** : change-le avec le mot de passe actuel,
+vérifie que **tu restes connecté**, puis reconnecte-toi avec le nouveau. Un compte créé via
+Google ne doit pas voir cette section du tout.
 
 ---
 
@@ -102,6 +119,9 @@ rester vide, et « Télécharger mes données » produit bien un fichier.
 | `le mailer est resté inerte` | Le `.env` a changé sans recréer le conteneur | `docker compose up -d --force-recreate backend` |
 | `réponse différente pour une adresse inconnue` | **Régression sérieuse** | Le point d'entrée révèle qui a un compte — à corriger avant d'ouvrir au public |
 | `jeton rejoué accepté` | **Régression sérieuse** | La déconnexion n'est plus opposable ; vérifier `tokenVersion` |
+| `les autres sessions sont révoquées` en échec | **Régression sérieuse** | Changer son mot de passe n'éjecte plus un intrus ; vérifier `changeAccountPassword` |
+| `la session appelante reste valable` en échec | Cookie non réémis par le contrôleur | Changer son mot de passe déconnecte — gênant sans être dangereux ; vérifier `res.cookie` dans `changePassword` |
+| Mail de confirmation jamais reçu | Envoi best-effort : l'inscription réussit même si le SMTP échoue | `docker compose logs backend \| grep "confirmation d'adresse"` |
 | `rotation des journaux` absente | Conteneurs créés avant l'ajout dans `docker-compose.yml` | `docker compose up -d --force-recreate` |
 
 Les deux lignes marquées « régression sérieuse » sont des défauts de confidentialité au sens
