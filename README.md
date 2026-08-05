@@ -16,12 +16,6 @@ amimot/
 └── frontend/                   # React + Vite — sous-module git séparé
 ```
 
-> `backend/` et `frontend/` sont conçus comme des dépôts Git distincts
-> (`amimot-backend`, `amimot-frontend`). Le rattachement en véritables
-> sous-modules Git (`git submodule add`) n'a pas encore été fait dans ce
-> dépôt — pour l'instant ce sont de simples dossiers avec leur propre `.git`
-> local. Demander si vous voulez que ce soit finalisé.
-
 ## Prérequis
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (avec Docker Compose v2)
