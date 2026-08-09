@@ -169,6 +169,25 @@ main : [docs/verification-post-deploiement.md](docs/verification-post-deploiemen
 Ce document contient aussi un **arbre de décision** pour le cas « aucun mail de
 mot de passe n'arrive », qui a déjà coûté un déploiement.
 
+## Intégration et déploiement continus (CI/CD)
+
+Deux workflows GitHub Actions, dans [`.github/workflows/`](.github/workflows/) :
+
+- **`pr-tests.yml`** — à chaque pull request vers `master` : trois jobs en
+  parallèle (Jest backend avec un Postgres de test sur le port 5433, Vitest +
+  lint frontend, suite Playwright complète). Exposé aussi en `workflow_call`
+  pour être réutilisé par le workflow de déploiement.
+- **`deploy.yml`** — à chaque push sur `master` (donc après fusion d'une PR) :
+  relance les trois suites de tests puis, si elles passent, se connecte en SSH
+  au VPS (`appleboy/ssh-action`, secrets `SSH_ADDRESS`/`SSH_USER`/
+  `SSH_PASSWORD`/`SSH_PORT` de l'environnement GitHub `production`) pour tirer
+  `master`, mettre à jour les sous-modules, puis relancer
+  `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
+
+Il n'y a pas d'étape manuelle supplémentaire une fois la PR fusionnée — le
+`bash deploy/smoke-test.sh` de la section précédente reste néanmoins recommandé
+après un déploiement sensible.
+
 ## Google OAuth (optionnel)
 
 Les routes `/api/auth/google*` répondent `501` tant que `GOOGLE_CLIENT_ID` et
