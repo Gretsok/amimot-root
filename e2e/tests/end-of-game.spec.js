@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { createRoom, joinRoom, revealRoomCode } = require('../helpers');
+const { wordForLetter } = require('../helpers/word-fixtures');
 
 // La config e2e (e2e/fixtures/game-defaults.e2e.json) n'a qu'une seule manche
 // : après Boutique, la partie passe directement à ENDED — inutile de
@@ -20,12 +21,12 @@ test('reaches the final ranking after a single round and returns to the Lobby', 
   const letter = letterText.replace('Lettre : ', '').trim();
   // Mots-pièges distincts du mot proposé, pour un GROUP_MATCH propre (les
   // deux marquent le même nombre de points) plutôt qu'un piège auto-déclenché.
-  const trapWord = `${letter}at`;
-  const proposalWord = `${letter}mot`;
+  const trapWord = wordForLetter(letter, 0);
+  const proposalWord = wordForLetter(letter, 2);
 
   await host.getByPlaceholder('Ton mot-piège').fill(trapWord);
   await host.getByRole('button', { name: 'Valider' }).click();
-  await guest.getByPlaceholder('Ton mot-piège').fill(`${letter}ib`);
+  await guest.getByPlaceholder('Ton mot-piège').fill(wordForLetter(letter, 1));
   await guest.getByRole('button', { name: 'Valider' }).click();
 
   await expect(host.getByPlaceholder('Ta proposition')).toBeVisible({ timeout: 8000 });

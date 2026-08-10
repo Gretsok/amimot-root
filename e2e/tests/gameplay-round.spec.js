@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { createRoom, joinRoom, revealRoomCode } = require('../helpers');
+const { wordForLetter } = require('../helpers/word-fixtures');
 
 // Le backend E2E tourne avec e2e/fixtures/game-defaults.e2e.json (phases
 // courtes, 1 seule manche) — cf. playwright.config.js — donc ce test complet
@@ -25,17 +26,17 @@ test('plays a full round: Preparation -> Proposition -> Resolution -> Recap -> S
   const letter = letterText.replace('Lettre : ', '').trim();
   // Mots-pièges distincts du mot proposé plus bas, pour un GROUP_MATCH propre
   // en résolution plutôt qu'un joueur tombant dans son propre piège.
-  const trapWord = `${letter}at`;
+  const trapWord = wordForLetter(letter, 0);
   // Deux propositions DIFFÉRENTES : la résolution a donc deux mots à dérouler,
   // ce qui permet de vérifier qu'aucun n'est sauté (régression).
-  const hostWord = `${letter}mot`;
-  const guestWord = `${letter}oiseau`;
+  const hostWord = wordForLetter(letter, 2);
+  const guestWord = wordForLetter(letter, 3);
 
   await host.getByPlaceholder('Ton mot-piège').fill(trapWord);
   await host.getByRole('button', { name: 'Valider' }).click();
   await expect(host.getByText('1 / 2 validé·e·s')).toBeVisible();
 
-  await guest.getByPlaceholder('Ton mot-piège').fill(`${letter}ib`);
+  await guest.getByPlaceholder('Ton mot-piège').fill(wordForLetter(letter, 1));
   await guest.getByRole('button', { name: 'Valider' }).click();
   await expect(host.getByText('2 / 2 validé·e·s')).toBeVisible();
 
