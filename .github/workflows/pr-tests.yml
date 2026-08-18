@@ -49,6 +49,31 @@ jobs:
         working-directory: backend
         run: npm test
 
+  backend-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build backend image
+        run: docker build -t amimot-backend-ci ./backend
+
+      # backend-tests et e2e-tests tournent tous deux depuis l'arbre source
+      # checkouté (`node src/server.js`), jamais depuis l'image construite :
+      # un fichier lu au runtime mais absent du `COPY` du Dockerfile est
+      # invisible à toute la suite, quelle que soit sa couverture logique.
+      # C'est exactement ce qui a cassé le jeu en prod le 2026-08-18 (le
+      # dictionnaire de wordExists() manquait dans l'image). Ce job construit
+      # l'image réellement déployée et vérifie que ses assets runtime
+      # attendus y sont bien présents.
+      - name: Verify runtime assets shipped in the image
+        run: |
+          if ! docker run --rm amimot-backend-ci test -s /app/data/dictionary/liste_francais.txt; then
+            echo "::error::data/dictionary/liste_francais.txt manquant (ou vide) dans l'image backend construite — vérifier le COPY dans backend/Dockerfile"
+            exit 1
+          fi
+
   frontend-tests:
     runs-on: ubuntu-latest
     steps:

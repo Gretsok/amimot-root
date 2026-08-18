@@ -13,6 +13,7 @@
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOMAIN="${1:-${DOMAIN:-}}"
 LOCAL_URL="http://127.0.0.1:8081"   # Caddy, publié seulement sur la boucle locale
 COOKIES="$(mktemp)"
@@ -86,6 +87,19 @@ esac
 
 defaults=$(curl -s -o /dev/null -w '%{http_code}' "$LOCAL_URL/api/config/game-defaults")
 check "l'API répond à travers le proxy ($LOCAL_URL/api)" "$([ "$defaults" = "200" ] && echo 0 || echo 1)" "HTTP $defaults"
+
+# --------------------------------------------------------------------------
+section "2 bis. Partie jouable (round complet)"
+
+# Les checks HTTP ci-dessus valident que le backend répond, pas que le moteur
+# de jeu fonctionne : le 2026-08-18, le Dockerfile ne copiait pas data/ dans
+# l'image, cassant wordExists() (mot-piège/proposition) sans que rien de ce
+# qui précède ne le détecte. Rejoue un round complet à 2 joueurs via socket,
+# dans le conteneur backend lui-même (cf. deploy/smoke-test-gameplay.js).
+gameplay_output=$(docker compose exec -T backend node - < "$SCRIPT_DIR/smoke-test-gameplay.js" 2>&1)
+gameplay_status=$?
+printf '%s\n' "$gameplay_output" | sed 's/^/    /'
+check "un round complet se joue de bout en bout (Préparation → Boutique)" "$gameplay_status" "voir la sortie ci-dessus"
 
 # --------------------------------------------------------------------------
 section "3. Service des pages"

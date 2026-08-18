@@ -33,6 +33,7 @@ Il sort en code 0 si tout passe, sinon avec le nombre d'échecs.
 |---|---|---|
 | 1 | Conteneurs | Les trois services tournent ; le backend n'a **jamais redémarré** (un conteneur qui plante et repart paraît sain à l'instant T — c'est le compteur qui le trahit) |
 | 2 | Backend | `/healthz` répond ; **migrations Prisma à jour** ; l'API répond à travers le proxy |
+| 2 bis | Partie jouable | Un round complet à 2 joueurs (Préparation → Proposition → Résolution → Récap → Boutique) se joue réellement via socket, **dans le conteneur backend** — c'est ce qui a raté le 2026-08-18 quand le dictionnaire manquait dans l'image construite ; les checks HTTP ci-dessus ne l'auraient pas détecté |
 | 3 | Site public | HTTPS, en-tête HSTS, redirection depuis HTTP, et **repli SPA** sur les six routes clientes (sans lui, un lien direct vers la politique de confidentialité renvoie 404) |
 | 4 | Comptes | Inscription ; mot de passe trop court refusé ; inscription sans acceptation refusée ; profil ; export RGPD **sans empreinte de mot de passe** et **avec** sa note d'information |
 | 5 | Sessions | Un jeton **rejoué après déconnexion est refusé** — effacer le cookie ne suffisait pas historiquement |
@@ -46,8 +47,10 @@ Il sort en code 0 si tout passe, sinon avec le nombre d'échecs.
 
 ## 2. Contrôles manuels
 
-Ce que le script ne peut pas faire : recevoir un mail, jouer une partie, lire une page rendue
-côté client. Comptez dix minutes.
+Ce que le script ne peut pas faire : recevoir un mail, lire une page rendue côté client, ou
+vérifier la reconnexion après fermeture d'onglet. Jouer un round via socket est en revanche
+automatisé (section 2 bis) — ce qui reste manuel ci-dessous porte sur le rendu et le temps réel
+côté navigateur. Comptez cinq minutes.
 
 ### 2.1 Réception réelle d'un email — le seul contrôle bout en bout
 
@@ -82,14 +85,15 @@ Envoie un message depuis une adresse externe vers `amimot-assistance@fergalmechi
 vérifie qu'il arrive. C'est l'unique voie d'exercice des droits publiée dans la politique de
 confidentialité : une adresse qui ne relève pas est un manquement à l'article 12.
 
-### 2.3 Une partie complète, à deux navigateurs
+### 2.3 Rendu et reconnexion, à deux navigateurs
 
-Le temps réel (Socket.io) n'est pas couvert par le script. Ouvre deux fenêtres, dont une en
-navigation privée :
+Que la manche se joue de bout en bout côté moteur est vérifié par le script (2 bis). Ce qui
+reste à l'œil : le rendu réel et la reconnexion. Ouvre deux fenêtres, dont une en navigation
+privée :
 
-- création d'une partie, code d'invitation, arrivée du second joueur ;
-- une manche entière : préparation → proposition → **les deux rythmes de révélation** →
-  récap des points → boutique ;
+- création d'une partie, code d'invitation, arrivée du second joueur — **affichage** correct
+  des deux côtés ;
+- une manche entière, en observant **les deux rythmes de révélation** en résolution ;
 - **ferme brutalement un onglet et rouvre-le** : le joueur doit retrouver sa partie (la
   reconnexion passe par le jeton de session).
 
@@ -119,6 +123,8 @@ Enfin, **supprime un compte de test** et vérifie que le mail de confirmation ar
 | `conteneur X` absent ou arrêté | Variable d'environnement manquante au démarrage | `docker compose logs X --tail 50` |
 | `backend a redémarré N fois` | Boucle de plantage, souvent `JWT_SECRET` absent ou base injoignable | `docker compose logs backend` |
 | `migrations en retard` | Image reconstruite sans redémarrer, ou migration échouée | `docker compose restart backend` puis relire les journaux |
+| `un round complet se joue` en échec, mot-piège/proposition refusé | `data/dictionary/liste_francais.txt` absent de l'image (Dockerfile) | `docker compose exec backend ls /app/data/dictionary/` ; comparer avec `backend/Dockerfile` |
+| `un round complet se joue` en échec, délai dépassé en RESOLUTION | Une transition de phase échoue silencieusement (`runGuarded` journalise sans faire planter le process) | `docker compose logs backend \| grep '\[phase-timer\]'` |
 | `HSTS absent` | En-tête perdu par le nginx de l'hôte | Vérifier que le proxy relaie les en-têtes du conteneur |
 | `/confidentialite` en 404 | Repli SPA cassé | Vérifier `try_files {path} /index.html` dans `deploy/Caddyfile.prod` |
 | `SMTP non configuré` | Variables absentes **ou conteneur non redémarré depuis** | Compléter le `.env` puis `docker compose up -d backend` |
